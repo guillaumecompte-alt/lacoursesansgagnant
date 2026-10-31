@@ -5,63 +5,100 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>La course sans gagnant</title>
 <meta name="description" content="Faire arriver 3 voiturettes en même temps en jouant sur les délais ou les positions de départ.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;600;800&display=swap">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c6cff'/%3E%3Cpath d='M27 30h20v20H27zM53 30h20v20H53zM27 56h20v20H27zM53 56h20v20H53z' fill='white'/%3E%3C/svg%3E">
 <style>
+  /* Charte graphique alignée sur le portail outilotheque.fr */
   :root {
-    --bg: oklch(0.97 0.025 85); --fg: oklch(0.25 0.03 40); --card: oklch(0.995 0.01 85);
-    --primary: oklch(0.62 0.2 35); --on-primary: oklch(0.99 0.01 85);
-    --secondary: oklch(0.92 0.04 85); --muted: oklch(0.5 0.03 50); --accent: oklch(0.85 0.15 95);
-    --border: oklch(0.86 0.04 75); --track: oklch(0.32 0.02 260); --track-line: oklch(0.95 0.01 90);
-    --ruler: oklch(0.88 0.12 95);
-    --car-1: oklch(0.62 0.22 27); --car-2: oklch(0.6 0.17 250); --car-3: oklch(0.7 0.18 145);
-    --car-4: oklch(0.82 0.17 85); --car-5: oklch(0.55 0.22 300);
+    color-scheme: dark;
+    --bg: #0b1020; --fg: #f4f5ff; --muted: #a1a9c4; --faint: #737e9f;
+    --panel-border: rgba(164, 176, 220, .13);
+    --primary: #9586ff; --primary-strong: #7665e6; --teal: #69d9c3;
+    --secondary: #1a2240; --border: rgba(166, 178, 222, .16);
+    --track: #161e38; --track-line: #c9cfe6; --ruler: #121a31;
+    --car-1: #ff6b6b; --car-2: #5aa8ff; --car-3: #5fd38d;
+    --car-4: #ffcf5c; --car-5: #b78cff;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font-family: Nunito, system-ui, sans-serif; }
-  h1, h2, .display { font-family: Fredoka, system-ui, sans-serif; }
-  main { max-width: 64rem; margin: 0 auto; padding: 2rem 1rem; }
-  header { text-align: center; margin-bottom: 1.5rem; }
-  h1 { color: var(--primary); font-size: clamp(2rem, 6vw, 3rem); margin: 0; }
-  header p { color: var(--muted); margin: .5rem 0 0; }
-  button { font: inherit; color: inherit; border: 0; cursor: pointer; border-radius: .5rem; background: var(--secondary); padding: .25rem .75rem; }
-  button:disabled { opacity: .5; cursor: default; }
-  .pill { border-radius: 999px; padding: .5rem 1.5rem; font-weight: 700; font-size: 1.1rem; }
-  .on { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 12px #0002; }
+  body { margin: 0; min-height: 100vh; color: var(--fg); overflow-x: hidden; letter-spacing: -.01em;
+    background: radial-gradient(ellipse at 50% -20%, rgba(91, 77, 187, .18), transparent 48%), var(--bg);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .ambient { position: fixed; pointer-events: none; filter: blur(90px); opacity: .12; z-index: -1; border-radius: 50%; }
+  .ambient-one { width: 340px; height: 340px; background: #6f59ff; top: 220px; left: -180px; }
+  .ambient-two { width: 300px; height: 300px; background: #22c8b0; top: 560px; right: -170px; opacity: .07; }
+
+  .topbar { height: 76px; border-bottom: 1px solid rgba(174,185,226,.1); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 clamp(16px, 6vw, 90px); background: rgba(9,14,29,.68); backdrop-filter: blur(20px); }
+  .brand { display: flex; align-items: center; gap: 11px; color: var(--fg); text-decoration: none; font-weight: 850; font-size: 14px; letter-spacing: .13em; }
+  .brand-dot { color: var(--primary); }
+  .brand-mark { width: 29px; height: 29px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border-radius: 9px;
+    background: linear-gradient(140deg, #a89bff, #6957e8); box-shadow: 0 4px 20px #7563ff33; }
+  .brand-mark span { background: white; border-radius: 2px; opacity: .95; }
+  .brand-mark span:nth-child(2), .brand-mark span:nth-child(3) { opacity: .62; }
+  .back { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #dedaff; background: #7b6ae626;
+    border: 1px solid #9687ff30; border-radius: 8px; padding: 8px 10px; font-size: 11px; font-weight: 800; transition: .18s ease; }
+  .back:hover { background: #8c7aff3d; color: white; }
+
+  main { max-width: 1190px; width: calc(100% - 32px); margin: 0 auto; padding: 48px 0 56px; }
+  header.hero { margin-bottom: 28px; }
+  .eyebrow { display: flex; align-items: center; gap: 10px; color: #aaa0ff; font-size: 10px; font-weight: 800; letter-spacing: .2em; }
+  .eyebrow-line { display: inline-block; height: 1px; width: 24px; background: var(--primary); }
+  h1 { margin: 18px 0 14px; font-size: clamp(36px, 6vw, 64px); line-height: 1; letter-spacing: -.06em; font-weight: 780; }
+  h1 span { background: linear-gradient(100deg, #a99eff 5%, #7dcbdf 95%); color: transparent; background-clip: text; -webkit-background-clip: text; }
+  header.hero p { color: var(--muted); margin: 0; font-size: 15px; line-height: 1.7; max-width: 560px; }
+
+  button { font: inherit; color: #c9cfe6; border: 1px solid transparent; cursor: pointer; border-radius: 8px; background: transparent;
+    padding: 6px 10px; font-size: 12px; font-weight: 650; transition: .18s ease; }
+  button:hover:not(:disabled) { color: #fff; background: var(--secondary); }
+  button:disabled { opacity: .45; cursor: default; }
+  .pill { padding: 10px 18px; font-weight: 750; font-size: 13px; border-color: var(--border); background: rgba(19,26,46,.82); }
+  .on { color: #e8e5ff; background: #7665e624; border-color: #8e7cff66; }
   .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
   .center { justify-content: center; }
-  .card { background: var(--card); border-radius: 1.25rem; padding: 1rem; box-shadow: 0 1px 3px #0001; margin-bottom: 1.5rem; }
-  .card h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
-  .chip { display: flex; align-items: center; gap: .5rem; border: 2px solid var(--border); background: transparent; border-radius: .75rem; opacity: .6; }
-  .chip.sel { border-color: var(--primary); background: var(--secondary); opacity: 1; }
-  .dot { width: 1.25rem; height: 1.25rem; border-radius: 50%; }
-  small { color: var(--muted); }
-  input { font: inherit; border: 1px solid var(--border); border-radius: .4rem; padding: .1rem .3rem; background: var(--bg); }
+  #games { justify-content: flex-start; }
+  #games .pill { letter-spacing: .14em; font-size: 11px; font-weight: 800; }
+
+  .card { position: relative; overflow: hidden; border: 1px solid var(--panel-border); border-radius: 15px; padding: 20px;
+    background: linear-gradient(145deg, rgba(25,33,57,.92), rgba(15,21,39,.92)); margin-bottom: 20px; }
+  .card::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--primary); opacity: .8; }
+  .card h2 { font-size: 16px; letter-spacing: -.03em; margin: 0 0 14px; font-weight: 750; }
+  .chip { display: flex; align-items: center; gap: .55rem; border: 1px solid var(--border); background: rgba(19,26,46,.6);
+    border-radius: 10px; padding: 9px 12px; opacity: .65; color: var(--fg); font-size: 13px; }
+  .chip.sel { border-color: #8e7cff80; background: #7665e61f; opacity: 1; box-shadow: 0 0 0 3px #8170ed14; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+  small { color: var(--faint); font-size: 11px; }
+  input { font: inherit; color: var(--fg); border: 1px solid var(--border); border-radius: 7px; padding: 4px 7px; background: rgba(19,26,46,.82); font-size: 13px; }
+  input:focus { outline: 0; border-color: #8273ee; box-shadow: 0 0 0 3px #8170ed1c; }
+  .toolbar-row { justify-content: space-between; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #aeb9e214; font-size: 13px; }
+  #boosts { color: var(--muted); }
 
   .race { display: flex; gap: .75rem; }
   .labels { width: 11rem; flex-shrink: 0; padding-top: .5rem; }
-  .label { height: 4rem; margin-bottom: .5rem; display: flex; flex-direction: column; justify-content: center; font-size: .875rem; }
+  .label { height: 4rem; margin-bottom: .5rem; display: flex; flex-direction: column; justify-content: center; gap: 2px; font-size: 13px; }
+  .label strong { font-weight: 700; }
   .label input[type=number] { width: 4.5rem; }
-  .label input[type=range] { accent-color: var(--primary); }
-  .trackwrap { flex: 1; position: relative; padding-right: 4rem; }
-  .track { position: relative; background: var(--track); border-radius: .75rem; padding: .5rem 0; }
-  .lane { position: relative; height: 4rem; margin-bottom: .5rem; border-bottom: 1px dashed color-mix(in oklch, var(--track-line) 30%, transparent); }
+  .label input[type=range] { accent-color: var(--primary); padding: 0; border: 0; background: transparent; }
+  .trackwrap { flex: 1; position: relative; margin-left: 68px; padding-right: 4rem; }
+  .track { position: relative; background: var(--track); border: 1px solid var(--panel-border); border-radius: 12px; padding: .5rem 0; }
+  .lane { position: relative; height: 4rem; margin-bottom: .5rem; border-bottom: 1px dashed rgba(201,207,230,.16); }
   .lane:last-child { margin-bottom: 0; border: 0; }
   .finish { position: absolute; top: 0; bottom: 0; left: 100%; width: .5rem;
     background-image: repeating-conic-gradient(var(--track-line) 0 25%, var(--track) 0 50%); background-size: 8px 8px; }
-  .car { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 32px; }
-  .offset-line { position: absolute; top: .25rem; left: 0; height: 2px; background: var(--accent); }
-  .offset-tag { position: absolute; top: .4rem; background: var(--accent); font-size: .75rem; font-weight: 800; padding: 0 .25rem; border-radius: .25rem; }
-  .ruler { position: relative; height: 2.5rem; margin-top: .25rem; background: var(--ruler); border-radius: 0 0 .4rem .4rem; }
-  .tick { position: absolute; top: 0; width: 1px; height: .5rem; background: var(--fg); }
-  .tick.major { height: 1rem; }
-  .tick span { position: absolute; top: 1rem; transform: translateX(-50%); font-size: 10px; font-weight: 600; }
-  .unit { position: absolute; right: -3.5rem; top: .75rem; font-size: .75rem; font-weight: 800; }
-  .go { background: var(--primary); color: var(--on-primary); font-size: 1.25rem; padding: .75rem 2rem; }
-  .timer { width: 7rem; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
-  .result { margin-top: 1rem; background: var(--secondary); border-radius: .75rem; padding: 1rem; text-align: center; }
-  .result p { font-size: 1.25rem; font-weight: 700; margin: 0 0 .5rem; }
-  .result ul { list-style: none; padding: 0; margin: 0; font-size: .875rem; color: var(--muted); }
+  .car { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 32px; filter: drop-shadow(0 4px 8px #0006); }
+  .offset-line { position: absolute; top: .25rem; left: 0; height: 2px; background: var(--teal); }
+  .offset-tag { position: absolute; top: .4rem; background: var(--teal); color: #0b1020; font-size: 11px; font-weight: 800; padding: 0 .3rem; border-radius: 4px; }
+  .ruler { position: relative; height: 2.5rem; margin-top: .4rem; background: var(--ruler); border: 1px solid var(--panel-border); border-radius: 8px; }
+  .tick { position: absolute; top: 0; width: 1px; height: .5rem; background: #7582a8; }
+  .tick.major { height: 1rem; background: #c9cfe6; }
+  .tick span { position: absolute; top: 1rem; transform: translateX(-50%); font-size: 10px; font-weight: 650; color: var(--muted); }
+  .unit { position: absolute; right: -3.5rem; top: .75rem; font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: .08em; }
+  .go { background: var(--primary-strong); border-color: transparent; color: white; font-size: 15px; padding: 12px 28px; box-shadow: 0 8px 24px #7563ff40; }
+  .go:hover:not(:disabled) { background: #8573f2; }
+  .timer { width: 7.5rem; font-size: 18px; font-weight: 750; font-variant-numeric: tabular-nums; color: #dedaff; }
+  .result { margin-top: 18px; background: rgba(19,26,46,.82); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; text-align: center; }
+  .result p { font-size: 17px; font-weight: 750; margin: 0 0 .5rem; letter-spacing: -.02em; }
+  .result.win { border-color: #69d9c366; box-shadow: 0 0 0 3px #69d9c314; }
+  .result ul { list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
 
   @keyframes blink { 50% { opacity: .15; transform: translateY(-50%) scale(1.15); } }
   .blink { animation: blink .45s ease-in-out infinite; }
@@ -70,20 +107,33 @@
     animation: fall var(--dur) cubic-bezier(.3,.6,.5,1) forwards; }
 
   @media (max-width: 600px) {
+    main { padding-top: 32px; }
+    .back span { display: none; }
     .race { flex-direction: column; }
     .labels { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; padding: 0; }
     .label { height: auto; }
+    .trackwrap { padding-right: 2.5rem; }
+    .unit { right: -2.2rem; }
   }
 </style>
 </head>
 <body>
+<div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+<div class="topbar">
+  <a class="brand" href="https://outilotheque.fr/" aria-label="Retour au portail">
+    <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+    <span>LE HUB<span class="brand-dot">.</span></span>
+  </a>
+  <a class="back" href="https://outilotheque.fr/">← <span>Tous les outils</span></a>
+</div>
 <main>
-  <header>
-    <h1>La course sans gagnant</h1>
+  <header class="hero">
+    <div class="eyebrow"><span class="eyebrow-line"></span> VITESSE &amp; PROPORTIONNALITÉ</div>
+    <h1>La course<br><span>sans gagnant.</span></h1>
     <p>Le but : faire arriver les 3 voiturettes en même temps !</p>
   </header>
 
-  <div class="row center" id="games" style="margin-bottom:1.5rem"></div>
+  <div class="row" id="games" style="margin-bottom:20px"></div>
 
   <section class="card">
     <h2 id="colorsTitle"></h2>
@@ -91,12 +141,12 @@
   </section>
 
   <section class="card" id="board" hidden>
-    <div class="row" style="justify-content:space-between;margin-bottom:1rem">
+    <div class="row toolbar-row">
       <div class="row" style="gap:.5rem">
         <strong>Longueur de piste :</strong>
         <input id="length" type="number" min="1" max="200" step="0.1" style="width:5rem"> cm
       </div>
-      <div class="row" style="gap:.5rem;font-size:.875rem" id="boosts">Vitesse d'affichage :</div>
+      <div class="row" style="gap:.4rem" id="boosts">Vitesse d'affichage :</div>
     </div>
 
     <div class="race">
@@ -110,7 +160,7 @@
     <div class="row center" style="margin-top:1.5rem">
       <button class="pill go" id="start">Départ !</button>
       <button class="pill" id="reset">Remettre en place</button>
-      <span class="display timer" id="timer">⏱ 0,00 s</span>
+      <span class="timer" id="timer">⏱ 0,00 s</span>
     </div>
     <div class="result" id="result" hidden></div>
   </section>
@@ -174,15 +224,15 @@ const carSvg = (color) => `
   <svg viewBox="0 0 60 30" width="64" height="32" aria-hidden="true">
     <rect x="4" y="10" width="50" height="12" rx="5" fill="${color}"/>
     <path d="M16 10 L22 3 H38 L46 10 Z" fill="${color}"/>
-    <path d="M24 5 H36 L41 10 H20 Z" fill="oklch(0.9 0.03 230)"/>
-    <circle cx="16" cy="23" r="5" fill="#222"/><circle cx="44" cy="23" r="5" fill="#222"/>
+    <path d="M24 5 H36 L41 10 H20 Z" fill="#d6e4ff" opacity=".9"/>
+    <circle cx="16" cy="23" r="5" fill="#0a0f1e" stroke="#4a5578"/><circle cx="44" cy="23" r="5" fill="#0a0f1e" stroke="#4a5578"/>
     <circle cx="16" cy="23" r="2" fill="#ccc"/><circle cx="44" cy="23" r="2" fill="#ccc"/>
-    <rect x="52" y="12" width="4" height="4" rx="1" fill="oklch(0.95 0.12 95)"/>
+    <rect x="52" y="12" width="4" height="4" rx="1" fill="#fff3b0"/>
   </svg>`;
 
 function renderSetup() {
   $("games").innerHTML = [1, 2].map((g) =>
-    `<button class="pill display ${state.game === g ? "on" : ""}" data-game="${g}">JEU ${g}</button>`).join("");
+    `<button class="pill ${state.game === g ? "on" : ""}" data-game="${g}">JEU ${g}</button>`).join("");
 
   $("colorsTitle").textContent = `Choisis 3 voiturettes (${state.selected.length}/3)`;
   $("colors").innerHTML = CARS.map((c) => {
@@ -249,7 +299,8 @@ function renderFrame() {
   res.hidden = !state.done;
   if (state.done) {
     const win = tied.size === 3, a = arrivals();
-    res.innerHTML = `<p class="display">${win ? "🎉 Bravo ! Les 3 voiturettes arrivent ensemble !"
+    res.classList.toggle("win", win);
+    res.innerHTML = `<p>${win ? "🎉 Bravo ! Les 3 voiturettes arrivent ensemble !"
       : "Perdu ! Une voiturette a touché la ligne seule… essaie encore !"}</p>
       <ul>${list.map((c, i) => `<li>Voiturette n°${i + 1} (${c.name}) : arrivée à ${fmt(a[i])} s</li>`).join("")}</ul>`;
     if (win) confetti();
