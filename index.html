@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La course sans gagnant</title>
+<meta name="description" content="Faire arriver 3 voiturettes en même temps en jouant sur les délais ou les positions de départ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: oklch(0.97 0.025 85); --fg: oklch(0.25 0.03 40); --card: oklch(0.995 0.01 85);
+    --primary: oklch(0.62 0.2 35); --on-primary: oklch(0.99 0.01 85);
+    --secondary: oklch(0.92 0.04 85); --muted: oklch(0.5 0.03 50); --accent: oklch(0.85 0.15 95);
+    --border: oklch(0.86 0.04 75); --track: oklch(0.32 0.02 260); --track-line: oklch(0.95 0.01 90);
+    --ruler: oklch(0.88 0.12 95);
+    --car-1: oklch(0.62 0.22 27); --car-2: oklch(0.6 0.17 250); --car-3: oklch(0.7 0.18 145);
+    --car-4: oklch(0.82 0.17 85); --car-5: oklch(0.55 0.22 300);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: Nunito, system-ui, sans-serif; }
+  h1, h2, .display { font-family: Fredoka, system-ui, sans-serif; }
+  main { max-width: 64rem; margin: 0 auto; padding: 2rem 1rem; }
+  header { text-align: center; margin-bottom: 1.5rem; }
+  h1 { color: var(--primary); font-size: clamp(2rem, 6vw, 3rem); margin: 0; }
+  header p { color: var(--muted); margin: .5rem 0 0; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; border-radius: .5rem; background: var(--secondary); padding: .25rem .75rem; }
+  button:disabled { opacity: .5; cursor: default; }
+  .pill { border-radius: 999px; padding: .5rem 1.5rem; font-weight: 700; font-size: 1.1rem; }
+  .on { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 12px #0002; }
+  .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .center { justify-content: center; }
+  .card { background: var(--card); border-radius: 1.25rem; padding: 1rem; box-shadow: 0 1px 3px #0001; margin-bottom: 1.5rem; }
+  .card h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+  .chip { display: flex; align-items: center; gap: .5rem; border: 2px solid var(--border); background: transparent; border-radius: .75rem; opacity: .6; }
+  .chip.sel { border-color: var(--primary); background: var(--secondary); opacity: 1; }
+  .dot { width: 1.25rem; height: 1.25rem; border-radius: 50%; }
+  small { color: var(--muted); }
+  input { font: inherit; border: 1px solid var(--border); border-radius: .4rem; padding: .1rem .3rem; background: var(--bg); }
+
+  .race { display: flex; gap: .75rem; }
+  .labels { width: 11rem; flex-shrink: 0; padding-top: .5rem; }
+  .label { height: 4rem; margin-bottom: .5rem; display: flex; flex-direction: column; justify-content: center; font-size: .875rem; }
+  .label input[type=number] { width: 4.5rem; }
+  .label input[type=range] { accent-color: var(--primary); }
+  .trackwrap { flex: 1; position: relative; padding-right: 4rem; }
+  .track { position: relative; background: var(--track); border-radius: .75rem; padding: .5rem 0; }
+  .lane { position: relative; height: 4rem; margin-bottom: .5rem; border-bottom: 1px dashed color-mix(in oklch, var(--track-line) 30%, transparent); }
+  .lane:last-child { margin-bottom: 0; border: 0; }
+  .finish { position: absolute; top: 0; bottom: 0; left: 100%; width: .5rem;
+    background-image: repeating-conic-gradient(var(--track-line) 0 25%, var(--track) 0 50%); background-size: 8px 8px; }
+  .car { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 32px; }
+  .offset-line { position: absolute; top: .25rem; left: 0; height: 2px; background: var(--accent); }
+  .offset-tag { position: absolute; top: .4rem; background: var(--accent); font-size: .75rem; font-weight: 800; padding: 0 .25rem; border-radius: .25rem; }
+  .ruler { position: relative; height: 2.5rem; margin-top: .25rem; background: var(--ruler); border-radius: 0 0 .4rem .4rem; }
+  .tick { position: absolute; top: 0; width: 1px; height: .5rem; background: var(--fg); }
+  .tick.major { height: 1rem; }
+  .tick span { position: absolute; top: 1rem; transform: translateX(-50%); font-size: 10px; font-weight: 600; }
+  .unit { position: absolute; right: -3.5rem; top: .75rem; font-size: .75rem; font-weight: 800; }
+  .go { background: var(--primary); color: var(--on-primary); font-size: 1.25rem; padding: .75rem 2rem; }
+  .timer { width: 7rem; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+  .result { margin-top: 1rem; background: var(--secondary); border-radius: .75rem; padding: 1rem; text-align: center; }
+  .result p { font-size: 1.25rem; font-weight: 700; margin: 0 0 .5rem; }
+  .result ul { list-style: none; padding: 0; margin: 0; font-size: .875rem; color: var(--muted); }
+
+  @keyframes blink { 50% { opacity: .15; transform: translateY(-50%) scale(1.15); } }
+  .blink { animation: blink .45s ease-in-out infinite; }
+  @keyframes fall { from { transform: translate3d(0,-10vh,0) rotate(0); } to { transform: translate3d(var(--dx),110vh,0) rotate(720deg); opacity: .8; } }
+  .confetti { position: fixed; top: 0; width: 10px; height: 16px; border-radius: 2px; pointer-events: none; z-index: 50;
+    animation: fall var(--dur) cubic-bezier(.3,.6,.5,1) forwards; }
+
+  @media (max-width: 600px) {
+    .race { flex-direction: column; }
+    .labels { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; padding: 0; }
+    .label { height: auto; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>La course sans gagnant</h1>
+    <p>Le but : faire arriver les 3 voiturettes en même temps !</p>
+  </header>
+
+  <div class="row center" id="games" style="margin-bottom:1.5rem"></div>
+
+  <section class="card">
+    <h2 id="colorsTitle"></h2>
+    <div class="row" id="colors"></div>
+  </section>
+
+  <section class="card" id="board" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:1rem">
+      <div class="row" style="gap:.5rem">
+        <strong>Longueur de piste :</strong>
+        <input id="length" type="number" min="1" max="200" step="0.1" style="width:5rem"> cm
+      </div>
+      <div class="row" style="gap:.5rem;font-size:.875rem" id="boosts">Vitesse d'affichage :</div>
+    </div>
+
+    <div class="race">
+      <div class="labels" id="labels"></div>
+      <div class="trackwrap">
+        <div class="track" id="track"></div>
+        <div class="ruler" id="ruler"></div>
+      </div>
+    </div>
+
+    <div class="row center" style="margin-top:1.5rem">
+      <button class="pill go" id="start">Départ !</button>
+      <button class="pill" id="reset">Remettre en place</button>
+      <span class="display timer" id="timer">⏱ 0,00 s</span>
+    </div>
+    <div class="result" id="result" hidden></div>
+  </section>
+</main>
+
+<script>
+// ===== Réglages : modifier ici les voiturettes (vitesses en cm/s) =====
+const CARS = [
+  { id: 1, name: "rouge",   color: "var(--car-1)", speed: 2.4 },
+  { id: 2, name: "bleue",   color: "var(--car-2)", speed: 0.49 },
+  { id: 3, name: "verte",   color: "var(--car-3)", speed: 1.22 },
+  { id: 4, name: "jaune",   color: "var(--car-4)", speed: 3.2 },
+  { id: 5, name: "violette", color: "var(--car-5)", speed: 0.8 },
+];
+const TOLERANCE = 0.2;   // écart maximal (s) pour considérer une arrivée simultanée
+const MAX_LENGTH = 200;  // cm
+
+// ===== État =====
+const state = {
+  game: 1,            // 1 = délais, 2 = positions de départ
+  length: 14,         // cm
+  selected: [1, 2, 3],
+  delay: {},          // délai par id de voiturette
+  offset: {},         // position de départ par id de voiturette
+  t: 0, running: false, done: false, boost: 1,
+};
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => n.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const pct = (cm) => (cm / state.length) * 100;
+const cars = () => state.selected.map((id) => CARS.find((c) => c.id === id));
+const idle = () => !state.running && state.t === 0;
+
+// ===== Physique =====
+function arrivals() {
+  return cars().map((c) => state.game === 1
+    ? (state.delay[c.id] || 0) + state.length / c.speed
+    : Math.max(0, state.length - (state.offset[c.id] || 0)) / c.speed);
+}
+function endTime() {
+  const a = arrivals(), min = Math.min(...a), max = Math.max(...a);
+  // La course s'arrête dès qu'une voiturette arrive seule.
+  return max - min > TOLERANCE ? min : max;
+}
+function position(c, t) {
+  const p = state.game === 1
+    ? Math.max(0, t - (state.delay[c.id] || 0)) * c.speed
+    : (state.offset[c.id] || 0) + t * c.speed;
+  return Math.min(state.length, p);
+}
+function tiedSet(t) {
+  const a = arrivals(), tied = new Set();
+  for (let i = 0; i < a.length; i++)
+    for (let j = i + 1; j < a.length; j++)
+      if (Math.abs(a[i] - a[j]) <= TOLERANCE && t >= Math.max(a[i], a[j])) { tied.add(i); tied.add(j); }
+  return tied;
+}
+
+// ===== Dessin =====
+const carSvg = (color) => `
+  <svg viewBox="0 0 60 30" width="64" height="32" aria-hidden="true">
+    <rect x="4" y="10" width="50" height="12" rx="5" fill="${color}"/>
+    <path d="M16 10 L22 3 H38 L46 10 Z" fill="${color}"/>
+    <path d="M24 5 H36 L41 10 H20 Z" fill="oklch(0.9 0.03 230)"/>
+    <circle cx="16" cy="23" r="5" fill="#222"/><circle cx="44" cy="23" r="5" fill="#222"/>
+    <circle cx="16" cy="23" r="2" fill="#ccc"/><circle cx="44" cy="23" r="2" fill="#ccc"/>
+    <rect x="52" y="12" width="4" height="4" rx="1" fill="oklch(0.95 0.12 95)"/>
+  </svg>`;
+
+function renderSetup() {
+  $("games").innerHTML = [1, 2].map((g) =>
+    `<button class="pill display ${state.game === g ? "on" : ""}" data-game="${g}">JEU ${g}</button>`).join("");
+
+  $("colorsTitle").textContent = `Choisis 3 voiturettes (${state.selected.length}/3)`;
+  $("colors").innerHTML = CARS.map((c) => {
+    const k = state.selected.indexOf(c.id);
+    return `<button class="chip ${k >= 0 ? "sel" : ""}" data-car="${c.id}" ${idle() ? "" : "disabled"}>
+      <span class="dot" style="background:${c.color}"></span>${c.name}
+      <small>${fmt(c.speed)} cm/s${k >= 0 ? ` · n°${k + 1}` : ""}</small></button>`;
+  }).join("");
+
+  const ready = state.selected.length === 3;
+  $("board").hidden = !ready;
+  if (!ready) return;
+
+  $("length").value = state.length;
+  $("length").disabled = !idle();
+  $("boosts").innerHTML = "Vitesse d'affichage : " + [1, 2, 5].map((b) =>
+    `<button data-boost="${b}" class="${state.boost === b ? "on" : ""}">×${b}</button>`).join("");
+
+  $("labels").innerHTML = cars().map((c, i) => `
+    <div class="label">
+      <strong>Voiturette n°${i + 1} (${c.name})</strong>
+      <small>${fmt(c.speed)} cm/s</small>
+      ${state.game === 1
+        ? `<label>Délai <input type="number" min="0" step="0.1" data-delay="${c.id}" value="${state.delay[c.id] || 0}" ${idle() ? "" : "disabled"}> s</label>`
+        : `<input type="range" min="0" max="${state.length}" step="0.01" data-offset="${c.id}" value="${state.offset[c.id] || 0}" ${idle() ? "" : "disabled"}>`}
+    </div>`).join("");
+
+  renderTrack();
+  $("start").disabled = state.running;
+  renderFrame();
+}
+
+// Piste + règle (redessinées seules quand on déplace un curseur, pour ne pas casser le glisser)
+function renderTrack() {
+  $("track").innerHTML = `<div class="finish"></div>` + cars().map((c) => {
+    const o = state.offset[c.id] || 0;
+    const marker = state.game === 2 && o > 0
+      ? `<div class="offset-line" style="width:${pct(o)}%"></div><span class="offset-tag" style="left:${pct(o)}%">${fmt(o)} cm</span>` : "";
+    return `<div class="lane">${marker}<div class="car">${carSvg(c.color)}</div></div>`;
+  }).join("");
+
+  // Règle graduée
+  const L = state.length;
+  const major = L <= 20 ? 1 : L <= 50 ? 5 : 10;
+  const minor = L <= 20 ? 0.5 : major / 5;
+  let html = "";
+  for (let k = 0; k * minor <= L + 1e-9; k++) {
+    const x = +(k * minor).toFixed(2);
+    const isMajor = Math.abs(x / major - Math.round(x / major)) < 1e-6;
+    html += `<div class="tick ${isMajor ? "major" : ""}" style="left:${pct(x)}%">${isMajor ? `<span>${fmt(x)}</span>` : ""}</div>`;
+  }
+  $("ruler").innerHTML = html + `<span class="unit">cm</span>`;
+}
+
+function renderFrame() {
+  const list = cars(), tied = tiedSet(state.t);
+  document.querySelectorAll("#track .car").forEach((el, i) => {
+    el.style.left = `calc(${pct(position(list[i], state.t))}% - 64px)`;
+    el.classList.toggle("blink", tied.has(i));
+  });
+  $("timer").textContent = `⏱ ${state.t.toFixed(2).replace(".", ",")} s`;
+
+  const res = $("result");
+  res.hidden = !state.done;
+  if (state.done) {
+    const win = tied.size === 3, a = arrivals();
+    res.innerHTML = `<p class="display">${win ? "🎉 Bravo ! Les 3 voiturettes arrivent ensemble !"
+      : "Perdu ! Une voiturette a touché la ligne seule… essaie encore !"}</p>
+      <ul>${list.map((c, i) => `<li>Voiturette n°${i + 1} (${c.name}) : arrivée à ${fmt(a[i])} s</li>`).join("")}</ul>`;
+    if (win) confetti();
+  }
+}
+
+function confetti() {
+  for (let i = 0; i < 140; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.style.cssText = `left:${Math.random() * 100}%;background:${CARS[i % 5].color};animation-delay:${Math.random() * 0.8}s;--dx:${(Math.random() - 0.5) * 300}px;--dur:${2.5 + Math.random() * 2.5}s`;
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6000);
+  }
+}
+
+// ===== Animation =====
+let last = 0;
+function loop(now) {
+  if (!state.running) return;
+  state.t += ((now - last) / 1000) * state.boost;
+  last = now;
+  const end = endTime();
+  if (state.t >= end) {
+    state.t = end; state.running = false; state.done = true;
+    renderSetup();
+    return;
+  }
+  renderFrame();
+  requestAnimationFrame(loop);
+}
+function start() {
+  state.t = 0; state.done = false; state.running = true;
+  renderSetup();
+  last = performance.now();
+  requestAnimationFrame(loop);
+}
+function reset() {
+  state.running = false; state.done = false; state.t = 0;
+  renderSetup();
+}
+
+// ===== Événements =====
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.game) { state.game = +b.dataset.game; reset(); }
+  else if (b.dataset.car && idle()) {
+    const id = +b.dataset.car, s = state.selected;
+    state.selected = s.includes(id) ? s.filter((x) => x !== id) : s.length < 3 ? [...s, id] : s;
+    renderSetup();
+  }
+  else if (b.dataset.boost) { state.boost = +b.dataset.boost; renderSetup(); }
+  else if (b.id === "start") start();
+  else if (b.id === "reset") reset();
+});
+
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (el.dataset.delay) { state.delay[el.dataset.delay] = Math.max(0, parseFloat(el.value) || 0); renderFrame(); }
+  if (el.dataset.offset) {
+    state.offset[el.dataset.offset] = +el.value;
+    renderTrack();
+    renderFrame();
+  }
+});
+
+$("length").addEventListener("change", (e) => {
+  const v = parseFloat(String(e.target.value).replace(",", "."));
+  if (v > 0 && v <= MAX_LENGTH) {
+    state.length = v;
+    for (const id in state.offset) state.offset[id] = Math.min(state.offset[id], v);
+  }
+  reset();
+});
+
+renderSetup();
+</script>
+</body>
+</html>
