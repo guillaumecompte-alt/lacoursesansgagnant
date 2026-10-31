@@ -302,7 +302,8 @@ function renderFrame() {
     res.classList.toggle("win", win);
     res.innerHTML = `<p>${win ? "🎉 Bravo ! Les 3 voiturettes arrivent ensemble !"
       : "Perdu ! Une voiturette a touché la ligne seule… essaie encore !"}</p>
-      <ul>${list.map((c, i) => `<li>Voiturette n°${i + 1} (${c.name}) : arrivée à ${fmt(a[i])} s</li>`).join("")}</ul>`;
+      <ul>${list.map((c, i) => a[i] <= state.t + 1e-9   // seulement les voiturettes réellement arrivées
+        ? `<li>Voiturette n°${i + 1} (${c.name}) : arrivée à ${fmt(a[i])} s</li>` : "").join("")}</ul>`;
     if (win) confetti();
   }
 }
